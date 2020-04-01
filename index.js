@@ -5,6 +5,7 @@ var _ = require('lodash'),
     gutil = require('gulp-util'),
     fileExists = require('file-exists'),
     file = require('gulp-file'),
+	  crypto = require('crypto'),
     Q = require('Q');
 
 var spawn = require('child_process').spawn;
@@ -67,6 +68,10 @@ function setup(options) {
         throw new gutil.PluginError(PLUGIN_NAME, 'Transform file at path: "' + options.transform + '" does not exist.');
 }
 
+function getProjFileName(options){
+	return "transformProjFiles/" +  crypto.createHash('md5').update(options.config).digest('hex') + "_msbuild.proj";
+}
+
 function createProj(options) {
     var deferred = Q.defer();
 
@@ -78,7 +83,7 @@ function createProj(options) {
                        .replace('{transform}', options.transform)
                        .replace('{destination}', options.destination);
 
-    file('_msbuild.proj', _project, { src: true })
+    file(getProjFileName(options), _project, { src: true })
         .pipe(gulp.dest('.'))
         .on('end', function() {
             deferred.resolve();
@@ -87,7 +92,7 @@ function createProj(options) {
     return deferred.promise;
 }
 
-function transform(options) {
+function transform(options,cb) {
 
     var _options = _.extend({
         config: './web.config',
@@ -103,7 +108,10 @@ function transform(options) {
     setup(_options);
 
     return createProj(_options).then(function() {
-        spawn(_options.msBuildPath, ['./_msbuild.proj', '/t:Transform'], {stdio: 'inherit'});
+		var projPath = "./" + getProjFileName(options);
+        var msBuildSpawn = spawn(_options.msBuildPath, [projPath, '/t:Transform'], {stdio: 'inherit'});
+		if(cb)
+			msBuildSpawn.on("exit",cb)
     }).done();
 }
 
