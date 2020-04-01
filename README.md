@@ -30,6 +30,34 @@ gulp.task('transform', function() {
 
 ```
 
+Added support for transforming multiple files.  Example transforming all debug files:
+
+```
+	var env = 'debug';
+	
+	return gulp.src("./**/*" + env + ".config").pipe(tap(function (file, t) {
+        var replace = '.' + env;
+        var configFile = file.path.replace(replace, '');
+        var destination = "C:\\inetpub\\wwwroot\\Publish\\transform\\" + configFile.replace(__dirname, '');
+        var folder = destination.substring(0, destination.lastIndexOf('\\'));
+        makeDir(folder)
+
+        console.log('transforming ' + file.path + " to: " + destination);
+
+        var options = {
+            config: configFile,
+            transform: file.path,
+            destination: destination,
+            netVersion: 4,
+            msBuildPath: 'C:\\Program Files (x86)\\Microsoft Visual Studio\\2017\\Enterprise\\MSBuild\\15.0\\Bin\\MSBuild.exe',
+            assemblyFile: 'C:\\Program Files (x86)\\Microsoft Visual Studio\\2017\\Enterprise\\MSBuild\\Microsoft\\VisualStudio\\v15.0\\Web\\Microsoft.Web.Publishing.Tasks.dll'
+        };
+
+        configtransform(options);
+    }));  
+
+```
+
 ## Options
 * `config`  
   The path of the `web.config`.  
